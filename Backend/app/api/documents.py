@@ -90,13 +90,13 @@ async def _process_single_file(file: UploadFile, current_admin: User) -> dict:
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_documents(
     files: List[UploadFile] = File(..., description="Upload one or multiple policy documents (PDF, DOCX, TXT, MD)"),
-    current_admin: User = Depends(get_current_admin)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Upload one or multiple company policy documents at once.
     Checks SHA-256 checksums to reject duplicate files and save storage.
     Extracts text, splits into chunks, embeds, and loads into Qdrant & MongoDB.
-    Requires administrator credentials.
+    Requires authenticated user credentials.
     """
     if not files:
         raise HTTPException(
@@ -109,7 +109,7 @@ async def upload_documents(
 
     for upload_file in files:
         try:
-            res = await _process_single_file(upload_file, current_admin)
+            res = await _process_single_file(upload_file, current_user)
             processed_docs.append(res)
         except Exception as err:
             logger.error(f"Failed processing file '{upload_file.filename}': {str(err)}")

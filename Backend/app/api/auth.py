@@ -140,6 +140,7 @@ async def login(payload: LoginRequest):
     # Generate token payload containing identity details
     token_data = {
         "sub": user.user_id,
+        "email": user.email,
         "role": user.role,
         "tenant_id": user.tenant_id
     }
