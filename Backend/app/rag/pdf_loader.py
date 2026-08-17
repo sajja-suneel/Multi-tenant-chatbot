@@ -1,8 +1,8 @@
 import os
 import logging
 from typing import List, Dict, Any
-import pymupdf  # PyMuPDF
 from docx import Document
+from pypdf import PdfReader
 
 logger = logging.getLogger("app.rag.document_loader")
 
@@ -39,31 +39,46 @@ def extract_text_from_pdf(file_path: str) -> List[Dict[str, Any]]:
     """
     Extract text from PDF file page by page.
     Automatically applies OCR fallback for scanned/image PDF pages.
+    Falls back gracefully to pypdf if PyMuPDF is unavailable.
     """
     pages = []
     try:
-        doc = pymupdf.open(file_path)
-        for idx, page in enumerate(doc):
-            page_num = idx + 1
-            # 1. Try native text extraction first
-            text = page.get_text().strip()
+        # Try PyMuPDF with OCR fallback
+        try:
+            import pymupdf
+            doc = pymupdf.open(file_path)
+            for idx, page in enumerate(doc):
+                page_num = idx + 1
+                text = page.get_text().strip()
 
-            # 2. If no text or very short text (scanned PDF page), apply OCR
-            if len(text) < 15:
-                logger.info(f"Page {page_num} of '{file_path}' has low text density ({len(text)} chars). Running OCR...")
-                pix = page.get_pixmap(dpi=150)
-                img_bytes = pix.tobytes("png")
-                ocr_text = perform_ocr_on_bytes(img_bytes)
-                if ocr_text:
-                    logger.info(f"OCR successfully extracted {len(ocr_text)} chars from page {page_num}.")
-                    text = ocr_text
+                if len(text) < 15:
+                    logger.info(f"Page {page_num} of '{file_path}' has low text density ({len(text)} chars). Running OCR...")
+                    pix = page.get_pixmap(dpi=150)
+                    img_bytes = pix.tobytes("png")
+                    ocr_text = perform_ocr_on_bytes(img_bytes)
+                    if ocr_text:
+                        logger.info(f"OCR successfully extracted {len(ocr_text)} chars from page {page_num}.")
+                        text = ocr_text
 
+                if text and text.strip():
+                    pages.append({
+                        "text": text.strip(),
+                        "page_number": page_num
+                    })
+            doc.close()
+            return pages
+        except Exception as pymupdf_err:
+            logger.warning(f"PyMuPDF failed or unavailable ({str(pymupdf_err)}). Falling back to pypdf...")
+
+        # Standard pypdf fallback
+        reader = PdfReader(file_path)
+        for idx, page in enumerate(reader.pages):
+            text = page.extract_text()
             if text and text.strip():
                 pages.append({
                     "text": text.strip(),
-                    "page_number": page_num
+                    "page_number": idx + 1
                 })
-        doc.close()
     except Exception as e:
         logger.error(f"Error reading PDF '{file_path}': {str(e)}")
         raise e
