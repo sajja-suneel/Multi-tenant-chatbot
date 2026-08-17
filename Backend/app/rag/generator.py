@@ -28,7 +28,7 @@ class Generator:
     @classmethod
     def generate_answer(cls, question: str, context_docs: List[Dict[str, Any]], history: List[Dict[str, Any]] = None) -> str:
         """
-        Generate answer from retrieved documents using Groq's Llama 3 model.
+        Generate answer from retrieved documents using Groq's active production models.
         Supports passing past conversation history.
         """
         # Rule: If no documents were retrieved AND this is not a greeting, return fallback
@@ -52,10 +52,6 @@ class Generator:
             logger.info("Initializing Groq Client...")
             client = Groq(api_key=settings.GROQ_API_KEY)
             
-            # Using Llama 3.3 70B model on Groq (migrated from deprecated llama3-70b-8192)
-            model_name = "llama-3.3-70b-versatile"
-            logger.info(f"Generating content with Groq model: {model_name}...")
-            
             # Construct message list with system prompt and history context
             messages = [
                 {"role": "system", "content": RAG_SYSTEM_PROMPT}
@@ -69,12 +65,28 @@ class Generator:
             
             # Append current query block
             messages.append({"role": "user", "content": user_prompt})
+
+            # Set llama-3.3-70b-versatile as primary model with fallback to groq/compound
+            supported_models = ["llama-3.3-70b-versatile", "groq/compound", "groq/compound-mini", "qwen/qwen3.6-27b"]
+            completion = None
+            last_err = None
             
-            completion = client.chat.completions.create(
-                model=model_name,
-                messages=messages,
-                temperature=0.0, # Zero temperature to avoid hallucination
-            )
+            for model_name in supported_models:
+                try:
+                    logger.info(f"Attempting response generation with Groq model: {model_name}...")
+                    completion = client.chat.completions.create(
+                        model=model_name,
+                        messages=messages,
+                        temperature=0.0, # Zero temperature to avoid hallucination
+                    )
+                    break
+                except Exception as model_err:
+                    logger.warning(f"Groq model '{model_name}' unavailable ({str(model_err)}). Trying fallback model...")
+                    last_err = model_err
+
+            if not completion:
+                raise last_err
+
             return completion.choices[0].message.content.strip()
         except Exception as e:
             logger.error(f"Error calling Groq API: {str(e)}")
