@@ -105,11 +105,7 @@ export const api = {
   },
 
   getMe: async (): Promise<User> => {
-    try {
-      return await request<User>("/auth/me");
-    } catch {
-      return await request<User>("/users/me");
-    }
+    return request<User>("/auth/me");
   },
 
   getUsers: async (): Promise<User[]> => {
