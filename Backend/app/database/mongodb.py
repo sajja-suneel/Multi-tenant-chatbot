@@ -80,8 +80,12 @@ class MongoDB:
     async def connect(cls):
         try:
             logger.info(f"Connecting to MongoDB at {settings.MONGODB_URL}...")
-            # Set a low timeout (2000ms) for quick mock fallback detection
-            cls.client = AsyncIOMotorClient(settings.MONGODB_URL, serverSelectionTimeoutMS=2000)
+            cls.client = AsyncIOMotorClient(
+                settings.MONGODB_URL, 
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=10000,
+                socketTimeoutMS=45000
+            )
             cls.db = cls.client[settings.MONGODB_DB_NAME]
             # Ping database to verify connection
             await cls.client.admin.command('ping')

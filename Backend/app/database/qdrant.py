@@ -18,14 +18,15 @@ class QdrantDB:
                     logger.info(f"Connecting to Qdrant Cloud at {settings.QDRANT_HOST}...")
                     cls.client = QdrantClient(
                         url=settings.QDRANT_HOST,
-                        api_key=settings.QDRANT_API_KEY
+                        api_key=settings.QDRANT_API_KEY,
+                        timeout=60
                     )
                 elif settings.QDRANT_URL == ":memory:":
                     logger.info("Connecting to transient in-memory Qdrant database...")
                     cls.client = QdrantClient(":memory:")
                 else:
                     logger.info(f"Connecting to local Qdrant at {settings.QDRANT_URL}...")
-                    cls.client = QdrantClient(url=settings.QDRANT_URL)
+                    cls.client = QdrantClient(url=settings.QDRANT_URL, timeout=60)
                 
                 # Check and initialize collection
                 cls._init_collection()

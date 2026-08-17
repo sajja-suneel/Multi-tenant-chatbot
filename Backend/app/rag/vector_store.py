@@ -48,12 +48,15 @@ class VectorStoreManager:
                 )
             )
 
-        logger.info(f"Upserting {len(points)} points into Qdrant collection {QdrantDB.collection_name}...")
-        client.upsert(
-            collection_name=QdrantDB.collection_name,
-            points=points
-        )
-        logger.info(f"Successfully upserted chunks for document {document_name} ({document_id}) for tenant {tenant_id}.")
+        logger.info(f"Upserting {len(points)} points into Qdrant collection {QdrantDB.collection_name} in batches of 50...")
+        batch_size = 50
+        for i in range(0, len(points), batch_size):
+            batch = points[i : i + batch_size]
+            client.upsert(
+                collection_name=QdrantDB.collection_name,
+                points=batch
+            )
+        logger.info(f"Successfully upserted {len(points)} chunks for document {document_name} ({document_id}) for tenant {tenant_id}.")
 
     @classmethod
     async def delete_document_vectors(cls, tenant_id: str, document_id: str):

@@ -58,6 +58,13 @@ async def _process_single_file(file: UploadFile, current_admin: User) -> dict:
         logger.info(f"Split {file.filename} into {len(chunks)} chunks.")
 
         document_id = str(uuid.uuid4())
+        await VectorStoreManager.add_document_chunks(
+            tenant_id=current_admin.tenant_id,
+            document_id=document_id,
+            document_name=file.filename,
+            chunks=chunks
+        )
+
         new_doc = Document(
             document_id=document_id,
             document_name=file.filename,
@@ -68,13 +75,6 @@ async def _process_single_file(file: UploadFile, current_admin: User) -> dict:
             file_hash=file_hash
         )
         await docs_col.insert_one(new_doc.model_dump(by_alias=True, exclude_none=True))
-
-        await VectorStoreManager.add_document_chunks(
-            tenant_id=current_admin.tenant_id,
-            document_id=document_id,
-            document_name=file.filename,
-            chunks=chunks
-        )
 
         logger.info(f"Successfully indexed document '{file.filename}' ({document_id}) with SHA-256 {file_hash[:10]}")
         return {
