@@ -78,10 +78,13 @@ class MongoDB:
 
     @classmethod
     async def connect(cls):
+        mongo_url = settings.MONGODB_URL
+        is_cloud_env = os.getenv("RENDER") or os.getenv("VERCEL") or os.getenv("PORT")
+        
         try:
-            logger.info(f"Connecting to MongoDB at {settings.MONGODB_URL}...")
+            logger.info(f"Connecting to MongoDB at {mongo_url[:20]}... (DB: {settings.MONGODB_DB_NAME})")
             cls.client = AsyncIOMotorClient(
-                settings.MONGODB_URL, 
+                mongo_url, 
                 serverSelectionTimeoutMS=5000,
                 connectTimeoutMS=10000,
                 socketTimeoutMS=45000
@@ -90,10 +93,13 @@ class MongoDB:
             # Ping database to verify connection
             await cls.client.admin.command('ping')
             cls.is_mock = False
-            logger.info("Successfully connected to MongoDB.")
+            logger.info(">>> SUCCESS: Connected to live MongoDB database.")
         except Exception as e:
-            logger.warning(f"MongoDB connection failed: {str(e)}")
-            logger.warning(">>> FALLBACK: Launching Mock In-Memory MongoDB for local development!")
+            logger.error(f"MongoDB connection failed: {str(e)}")
+            if is_cloud_env and ("localhost" in mongo_url or "127.0.0.1" in mongo_url):
+                logger.error("!!! CLOUD DEPLOYMENT WARNING: MONGODB_URL is currently set to localhost!")
+                logger.error("!!! Data will NOT persist across server restarts unless MONGODB_URL is set to your MongoDB Atlas URI in Render Environment Variables.")
+            logger.warning(">>> FALLBACK: Launching Mock In-Memory MongoDB for temporary local fallback.")
             cls.is_mock = True
             cls.client = None
             cls.db = None
