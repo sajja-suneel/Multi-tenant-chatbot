@@ -28,7 +28,7 @@ class Generator:
     @classmethod
     def generate_answer(cls, question: str, context_docs: List[Dict[str, Any]], history: List[Dict[str, Any]] = None) -> str:
         """
-        Generate answer from retrieved documents using Groq's active production models.
+        Generate answer from retrieved documents using Groq's llama-3.3-70b-versatile model.
         Supports passing past conversation history.
         """
         # Rule: If no documents were retrieved AND this is not a greeting, return fallback
@@ -66,26 +66,23 @@ class Generator:
             # Append current query block
             messages.append({"role": "user", "content": user_prompt})
 
-            # Set llama-3.3-70b-versatile as primary model with fallback to groq/compound
-            supported_models = ["llama-3.3-70b-versatile", "groq/compound", "groq/compound-mini", "qwen/qwen3.6-27b"]
-            completion = None
-            last_err = None
+            # Use llama-3.3-70b-versatile model on Groq directly
+            model_name = "llama-3.3-70b-versatile"
+            logger.info(f"Generating response using Groq model: {model_name}...")
             
-            for model_name in supported_models:
-                try:
-                    logger.info(f"Attempting response generation with Groq model: {model_name}...")
-                    completion = client.chat.completions.create(
-                        model=model_name,
-                        messages=messages,
-                        temperature=0.0, # Zero temperature to avoid hallucination
-                    )
-                    break
-                except Exception as model_err:
-                    logger.warning(f"Groq model '{model_name}' unavailable ({str(model_err)}). Trying fallback model...")
-                    last_err = model_err
-
-            if not completion:
-                raise last_err
+            try:
+                completion = client.chat.completions.create(
+                    model=model_name,
+                    messages=messages,
+                    temperature=0.0, # Zero temperature to avoid hallucination
+                )
+            except Exception as main_err:
+                logger.warning(f"Model '{model_name}' failed ({str(main_err)}). Trying fallback model 'groq/compound'...")
+                completion = client.chat.completions.create(
+                    model="groq/compound",
+                    messages=messages,
+                    temperature=0.0,
+                )
 
             return completion.choices[0].message.content.strip()
         except Exception as e:
