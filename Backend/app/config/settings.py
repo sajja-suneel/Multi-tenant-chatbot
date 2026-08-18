@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # MongoDB settings
-    MONGODB_URL: str = "mongodb://localhost:27017"
+    MONGODB_URL: str = ""
     MONGODB_DB_NAME: str = "multi_Tenant_chat"
     CHAT_HISTORY_COLLECTION: str = "Tenant_chatbot_history"
 
