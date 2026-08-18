@@ -29,10 +29,6 @@ async def lifespan(app: FastAPI):
         await MongoDB.connect()
         QdrantDB.connect()
         logger.info("Database initializations completed.")
-        
-        # Pre-load embedding model during startup so first PDF upload is instant
-        from app.rag.embeddings import EmbeddingManager
-        EmbeddingManager.get_model()
     except Exception as e:
         logger.critical(f"Critical error on application startup: {str(e)}")
         raise e
