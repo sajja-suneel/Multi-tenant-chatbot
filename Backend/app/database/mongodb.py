@@ -11,6 +11,18 @@ class MockCollection:
         self.name = name
         self.data = {}
 
+    def _matches_filter(self, doc: dict, filter_dict: dict) -> bool:
+        if not filter_dict:
+            return True
+        for k, v in filter_dict.items():
+            if k == "$or" and isinstance(v, list):
+                if not any(self._matches_filter(doc, sub) for sub in v):
+                    return False
+            else:
+                if doc.get(k) != v:
+                    return False
+        return True
+
     async def insert_one(self, document: dict) -> dict:
         if "_id" not in document:
             document["_id"] = str(len(self.data) + 1)
@@ -19,49 +31,62 @@ class MockCollection:
 
     async def find_one(self, filter_dict: dict) -> dict:
         for doc in self.data.values():
-            match = True
-            for k, v in filter_dict.items():
-                if doc.get(k) != v:
-                    match = False
-                    break
-            if match:
+            if self._matches_filter(doc, filter_dict):
                 return doc
         return None
 
-    def find(self, filter_dict: dict):
-        results = []
-        for doc in self.data.values():
-            match = True
-            for k, v in filter_dict.items():
-                if doc.get(k) != v:
-                    match = False
-                    break
-            if match:
-                results.append(doc)
+    def find(self, filter_dict: dict = None):
+        if filter_dict is None:
+            filter_dict = {}
+        results = [doc for doc in self.data.values() if self._matches_filter(doc, filter_dict)]
 
         class AsyncCursor:
             def __init__(self, items):
-                self.items = items
+                self.items = list(items)
                 self.idx = 0
-            def __aiter__(self):
+
+            def sort(self, key_or_list, direction=1):
+                if isinstance(key_or_list, str):
+                    rev = (direction == -1)
+                    self.items.sort(key=lambda x: x.get(key_or_list, ""), reverse=rev)
+                elif isinstance(key_or_list, list):
+                    for k, d in reversed(key_or_list):
+                        rev = (d == -1)
+                        self.items.sort(key=lambda x: x.get(k, ""), reverse=rev)
                 return self
+
+            def limit(self, n: int):
+                if n is not None and n >= 0:
+                    self.items = self.items[:n]
+                return self
+
+            def skip(self, n: int):
+                if n is not None and n >= 0:
+                    self.items = self.items[n:]
+                return self
+
+            async def to_list(self, length: int = None):
+                if length is None:
+                    return self.items
+                return self.items[:length]
+
+            def __aiter__(self):
+                self.idx = 0
+                return self
+
             async def __anext__(self):
                 if self.idx < len(self.items):
                     item = self.items[self.idx]
                     self.idx += 1
                     return item
                 raise StopAsyncIteration
+
         return AsyncCursor(results)
 
     async def delete_one(self, filter_dict: dict) -> int:
         to_delete = []
         for _id, doc in self.data.items():
-            match = True
-            for k, v in filter_dict.items():
-                if doc.get(k) != v:
-                    match = False
-                    break
-            if match:
+            if self._matches_filter(doc, filter_dict):
                 to_delete.append(_id)
         for _id in to_delete:
             del self.data[_id]

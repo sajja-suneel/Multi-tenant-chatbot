@@ -36,11 +36,14 @@ class Generator:
             logger.info("No context docs retrieved and not a greeting. Returning fallback text.")
             return "I couldn't find information about this topic in the available company documents."
 
-        # Format context text
+        # Format context text (truncate long chunks to manage token budget)
         context_str = ""
         for idx, doc in enumerate(context_docs):
+            text_content = doc.get('text', '')
+            if len(text_content) > 1500:
+                text_content = text_content[:1500] + "... [truncated]"
             context_str += f"[Source: {doc['document_name']}, Page: {doc.get('page_number', 1)}]\n"
-            context_str += f"{doc['text']}\n\n"
+            context_str += f"{text_content}\n\n"
 
         user_prompt = RAG_USER_TEMPLATE.format(context=context_str, question=question)
 
@@ -57,32 +60,47 @@ class Generator:
                 {"role": "system", "content": RAG_SYSTEM_PROMPT}
             ]
             
-            # Add past user questions and assistant answers (limited to last 5)
+            # Add past user questions and assistant answers (limited to last 3 logs, max 300 chars per answer)
             if history:
-                for log in history:
-                    messages.append({"role": "user", "content": log.get("question", "")})
-                    messages.append({"role": "assistant", "content": log.get("answer", "")})
+                for log in history[-3:]:
+                    q_hist = log.get("question", "")
+                    a_hist = log.get("answer", "")
+                    if len(a_hist) > 300:
+                        a_hist = a_hist[:300] + "..."
+                    if q_hist and a_hist:
+                        messages.append({"role": "user", "content": q_hist})
+                        messages.append({"role": "assistant", "content": a_hist})
             
             # Append current query block
             messages.append({"role": "user", "content": user_prompt})
 
-            # Use llama-3.3-70b-versatile model on Groq directly
-            model_name = "llama-3.3-70b-versatile"
-            logger.info(f"Generating response using Groq model: {model_name}...")
-            
-            try:
-                completion = client.chat.completions.create(
-                    model=model_name,
-                    messages=messages,
-                    temperature=0.0, # Zero temperature to avoid hallucination
-                )
-            except Exception as main_err:
-                logger.warning(f"Model '{model_name}' failed ({str(main_err)}). Trying fallback model 'groq/compound'...")
-                completion = client.chat.completions.create(
-                    model="groq/compound",
-                    messages=messages,
-                    temperature=0.0,
-                )
+            # Supported candidate models on Groq
+            models_to_try = [
+                "groq/compound",
+                "groq/compound-mini",
+                "llama-3.3-70b-versatile",
+                "llama-3.1-8b-instant"
+            ]
+
+            completion = None
+            last_err = None
+
+            for model_name in models_to_try:
+                try:
+                    logger.info(f"Generating response using Groq model: {model_name}...")
+                    completion = client.chat.completions.create(
+                        model=model_name,
+                        messages=messages,
+                        temperature=0.0,
+                    )
+                    if completion:
+                        break
+                except Exception as model_err:
+                    logger.warning(f"Model '{model_name}' failed: {str(model_err)}. Trying next candidate...")
+                    last_err = model_err
+
+            if not completion:
+                raise last_err or RuntimeError("All candidate Groq models failed.")
 
             return completion.choices[0].message.content.strip()
         except Exception as e:
