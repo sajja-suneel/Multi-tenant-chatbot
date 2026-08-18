@@ -14,15 +14,29 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 def is_generic_followup(question: str) -> bool:
     """
-    Detect if the question is a conversational follow-up/continuation query.
+    Detect if the question is a conversational follow-up, continuation, or reformatting query.
     """
     q = question.lower().strip().strip("?").strip("!").strip(".")
+    
+    # Exact generic phrases
     followups = {
         "tell me more", "tell me more information", "continue", "explain more", 
         "elaborate", "tell me why", "why", "explain", "go on", "more details",
-        "tell me more about it", "explain this more"
+        "tell me more about it", "explain this more", "in points", "point wise",
+        "points format", "point format", "point type", "bullet points", "step by step",
+        "in table", "table format", "table type", "list them", "summarize", "summarise"
     }
-    return q in followups or "more information" in q or "tell me more" in q
+    if q in followups:
+        return True
+        
+    # Keywords indicating a continuation or reformatting request
+    keywords = [
+        "more information", "tell me more", "explain more", "point type", "points format",
+        "in points", "point wise", "pointwise", "bullet point", "bullet points", "table format",
+        "table type", "in table", "step by step", "explain them in", "explain it in",
+        "explain in", "show in points", "give points", "list points"
+    ]
+    return any(k in q for k in keywords)
 
 @router.post("", response_model=ChatResponse)
 async def chat_with_policies(
@@ -58,12 +72,12 @@ async def chat_with_policies(
         # Reverse to get chronological order (oldest to newest)
         history_logs.reverse()
 
-        # Contextualize query: if user asks a generic follow-up like "tell me more",
+        # Contextualize query: if user asks a generic follow-up or reformatting request (e.g. "point type to explain them"),
         # search Qdrant using the previous query so we get the correct documents.
         search_query = question
         if is_generic_followup(question) and len(history_logs) > 0:
             search_query = history_logs[-1].get("question", question)
-            logger.info(f"Generic follow-up query detected. Using previous query for document search: '{search_query}'")
+            logger.info(f"Generic/reformatting follow-up query detected. Using previous query for document search: '{search_query}'")
 
         # 1. Retrieve tenant-specific documents
         context_docs = Retriever.retrieve(
@@ -72,6 +86,19 @@ async def chat_with_policies(
             limit=5,
             score_threshold=0.35
         )
+
+        # Fallback: If 0 documents retrieved for the new phrase but past history exists,
+        # fallback to querying Qdrant using the previous question from history.
+        if not context_docs and len(history_logs) > 0:
+            prev_q = history_logs[-1].get("question")
+            if prev_q and prev_q != search_query:
+                logger.info(f"0 docs retrieved for '{search_query}'. Retrying retrieval using previous query: '{prev_q}'")
+                context_docs = Retriever.retrieve(
+                    tenant_id=tenant_id,
+                    query=prev_q,
+                    limit=5,
+                    score_threshold=0.35
+                )
 
         # 2. Call generator to build answer, passing the history logs context
         answer = Generator.generate_answer(question=question, context_docs=context_docs, history=history_logs)
