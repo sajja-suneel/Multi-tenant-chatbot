@@ -12,6 +12,12 @@ def get_ocr_engine():
     """Lazy initialize RapidOCR engine."""
     global _ocr_engine
     if _ocr_engine is None:
+        disable_ocr = os.getenv("DISABLE_OCR", "true").lower() == "true"
+        enable_ocr = os.getenv("ENABLE_OCR", "false").lower() == "true"
+        if disable_ocr and not enable_ocr:
+            logger.info("OCR is disabled to conserve memory and prevent request timeouts on cloud deployments.")
+            _ocr_engine = False
+            return None
         try:
             from rapidocr_onnxruntime import RapidOCR
             _ocr_engine = RapidOCR()
@@ -38,9 +44,11 @@ def perform_ocr_on_bytes(image_bytes: bytes) -> str:
 def extract_text_from_pdf(file_path: str) -> List[Dict[str, Any]]:
     """
     Extract text from PDF file page by page using PyMuPDF (pymupdf).
-    Automatically applies OCR fallback for scanned/image PDF pages.
+    Automatically applies lightweight OCR fallback for scanned/image PDF pages.
     """
     pages = []
+    ocr_count = 0
+    MAX_OCR_PAGES = 3  # Cap OCR scans per document to avoid HTTP request timeouts
     try:
         doc = pymupdf.open(file_path)
         for idx, page in enumerate(doc):
@@ -48,15 +56,21 @@ def extract_text_from_pdf(file_path: str) -> List[Dict[str, Any]]:
             # 1. Native text extraction using PyMuPDF
             text = page.get_text().strip()
 
-            # 2. If no text or low text density (scanned page), run OCR
-            if len(text) < 15:
-                logger.info(f"Page {page_num} of '{file_path}' has low text density ({len(text)} chars). Running OCR...")
-                pix = page.get_pixmap(dpi=150)
-                img_bytes = pix.tobytes("png")
-                ocr_text = perform_ocr_on_bytes(img_bytes)
-                if ocr_text:
-                    logger.info(f"OCR successfully extracted {len(ocr_text)} chars from page {page_num}.")
-                    text = ocr_text
+            # 2. If no text or low text density (scanned page), run OCR (capped to MAX_OCR_PAGES)
+            if len(text) < 15 and ocr_count < MAX_OCR_PAGES:
+                engine = get_ocr_engine()
+                if engine:
+                    logger.info(f"Page {page_num} of '{file_path}' has low text density ({len(text)} chars). Running OCR ({ocr_count+1}/{MAX_OCR_PAGES})...")
+                    try:
+                        pix = page.get_pixmap(dpi=100)  # Use 100 DPI for faster inference
+                        img_bytes = pix.tobytes("png")
+                        ocr_text = perform_ocr_on_bytes(img_bytes)
+                        if ocr_text:
+                            logger.info(f"OCR successfully extracted {len(ocr_text)} chars from page {page_num}.")
+                            text = ocr_text
+                        ocr_count += 1
+                    except Exception as ocr_err:
+                        logger.warning(f"OCR failed for page {page_num}: {str(ocr_err)}")
 
             if text and text.strip():
                 pages.append({

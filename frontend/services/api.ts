@@ -178,17 +178,10 @@ export const api = {
   },
 
   chat: async (question: string, sessionId?: string): Promise<{ answer: string; sources?: Source[] }> => {
-    try {
-      return await request<{ answer: string; sources?: Source[] }>("/chat/query", {
-        method: "POST",
-        body: JSON.stringify({ question, session_id: sessionId }),
-      });
-    } catch {
-      return await request<{ answer: string; sources?: Source[] }>("/chat", {
-        method: "POST",
-        body: JSON.stringify({ question, session_id: sessionId }),
-      });
-    }
+    return await request<{ answer: string; sources?: Source[] }>("/chat", {
+      method: "POST",
+      body: JSON.stringify({ question, session_id: sessionId }),
+    });
   },
 
   getChatHistory: async (): Promise<any[]> => {
