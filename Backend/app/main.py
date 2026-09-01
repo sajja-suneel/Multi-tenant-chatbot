@@ -47,12 +47,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Setup CORS middleware
-# In development, we allow localhost origins where the React/Next.js app runs
+# Setup CORS middleware to allow cross-origin requests from all frontend deployments (Vercel, Localhost, etc.)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace with specific origins in production e.g., ["http://localhost:3000"]
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  # Set to False when using Authorization Bearer headers with wildcard origins
     allow_methods=["*"],
     allow_headers=["*"],
 )
