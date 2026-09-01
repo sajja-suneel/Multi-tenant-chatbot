@@ -13,14 +13,14 @@ class EmbeddingManager:
         if cls._model is None:
             try:
                 logger.info(f"Loading FastEmbed TextEmbedding model ({cls.model_name})...")
-                from fastembed import TextEmbedding
+                from fastembed import TextEmbedding  # type: ignore
                 cls._model = TextEmbedding(model_name=cls.model_name)
                 cls._is_fastembed = True
                 logger.info("FastEmbed model loaded successfully (~40MB RAM).")
             except Exception as e:
                 logger.warning(f"FastEmbed initialization failed ({str(e)}). Falling back to SentenceTransformer...")
                 try:
-                    from sentence_transformers import SentenceTransformer
+                    from sentence_transformers import SentenceTransformer  # type: ignore
                     cls._model = SentenceTransformer("all-MiniLM-L6-v2")
                     cls._is_fastembed = False
                     logger.info("SentenceTransformer model loaded successfully.")
