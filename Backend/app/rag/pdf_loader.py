@@ -19,7 +19,7 @@ def get_ocr_engine():
             _ocr_engine = False
             return None
         try:
-            from rapidocr_onnxruntime import RapidOCR
+            from rapidocr_onnxruntime import RapidOCR  # type: ignore
             _ocr_engine = RapidOCR()
             logger.info("RapidOCR engine initialized successfully.")
         except Exception as e:
