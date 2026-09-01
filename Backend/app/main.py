@@ -24,11 +24,13 @@ logger = logging.getLogger("app.main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup tasks
-    logger.info("Initializing databases connections...")
+    logger.info("Initializing databases connections and warming up embedding models...")
     try:
         await MongoDB.connect()
         QdrantDB.connect()
-        logger.info("Database initializations completed.")
+        from app.rag.embeddings import EmbeddingManager
+        EmbeddingManager.get_model()
+        logger.info("Database initializations and model warmup completed.")
     except Exception as e:
         logger.critical(f"Critical error on application startup: {str(e)}")
         raise e

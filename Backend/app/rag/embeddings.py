@@ -43,8 +43,8 @@ class EmbeddingManager:
             return []
         model = cls.get_model()
         if cls._is_fastembed:
-            embeddings = list(model.embed(texts))
+            embeddings = list(model.embed(texts, batch_size=32))
             return [e.tolist() for e in embeddings]
         else:
-            embeddings = model.encode(texts, convert_to_numpy=True)
+            embeddings = model.encode(texts, batch_size=32, convert_to_numpy=True)
             return embeddings.tolist()
