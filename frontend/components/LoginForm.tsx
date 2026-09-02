@@ -28,7 +28,7 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="w-full max-w-lg p-6 sm:p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50">
+        <div className="w-full max-w-2xl p-6 sm:p-8 bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50">
             <div className="flex flex-col items-center mb-6 text-center">
                 <div className="flex items-center justify-center w-12 h-12 mb-3 bg-orange-50 rounded-xl border border-orange-200/80 shadow-xs">
                     <Lock className="w-6 h-6 text-orange-600" />

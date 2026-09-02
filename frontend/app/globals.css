@@ -119,6 +119,7 @@
   html {
     color-scheme: light;
     scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
   }
   body {
     background-color: #f6f8fc !important;

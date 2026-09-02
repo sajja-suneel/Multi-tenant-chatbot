@@ -58,7 +58,9 @@ export default function Home() {
     setAuthTab(tab);
     const element = document.getElementById("auth-section");
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      const yOffset = -80; // height of sticky header
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: "smooth" });
     }
   };
 
@@ -187,7 +189,7 @@ export default function Home() {
         {/* Live Interactive UI Preview (Light Theme Container) */}
         <div className="mt-16 relative mx-auto max-w-5xl rounded-2xl border border-slate-200/90 bg-white p-2 sm:p-4 shadow-2xl shadow-slate-300/60 overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/5 via-transparent to-amber-500/5 pointer-events-none" />
-          
+
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-100/90 rounded-t-xl">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -246,8 +248,8 @@ export default function Home() {
       </section>
 
       {/* Features Grid Section */}
-      <section id="features" className="relative z-10 py-20 bg-white border-y border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="features" className="scroll-mt-20 relative z-10 py-20 bg-white border-y border-slate-200/80">
+        <div id="architecture" className="scroll-mt-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-xs font-semibold uppercase tracking-widest text-orange-600 mb-2">
               Enterprise Ready Architecture
@@ -331,7 +333,7 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="how-it-works" className="scroll-mt-20 py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-orange-600 mb-2">
             Simple 3-Step Process
@@ -378,7 +380,7 @@ export default function Home() {
       </section>
 
       {/* Interactive Auth Section */}
-      <section id="auth-section" className="py-12 sm:py-16 bg-slate-100/70 border-t border-slate-200/80 relative">
+      <section id="auth-section" className="scroll-mt-20 py-16 sm:py-20 bg-slate-100/70 border-t border-slate-200/80 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
@@ -392,21 +394,19 @@ export default function Home() {
             <div className="mt-5 inline-flex p-1 bg-slate-200/80 border border-slate-300/80 rounded-xl">
               <button
                 onClick={() => setAuthTab("register")}
-                className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                  authTab === "register"
+                className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${authTab === "register"
                     ? "bg-white text-orange-600 shadow-sm border border-slate-200"
                     : "text-slate-600 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 Create Account (Register)
               </button>
               <button
                 onClick={() => setAuthTab("login")}
-                className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                  authTab === "login"
+                className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all ${authTab === "login"
                     ? "bg-white text-orange-600 shadow-sm border border-slate-200"
                     : "text-slate-600 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 Sign In (Login)
               </button>
@@ -420,7 +420,7 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="faq" className="scroll-mt-20 py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Frequently Asked Questions</h2>
         </div>
