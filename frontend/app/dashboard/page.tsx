@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ShieldAlert, UserPlus, Users, Trash2, Mail, Lock, Shield, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, ShieldAlert, UserPlus, Users, Trash2, Mail, Lock, Shield, CheckCircle2, AlertCircle, Menu } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import DocumentUpload from "../../components/DocumentUpload";
 import { User } from "../../types";
@@ -21,6 +21,7 @@ export default function DashboardPage() {
     const [actionError, setActionError] = useState("");
     const [actionSuccess, setActionSuccess] = useState("");
     const [submittingUser, setSubmittingUser] = useState(false);
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     useEffect(() => {
         const checkAdminAuth = async () => {
@@ -102,19 +103,28 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex h-screen bg-gray-950 overflow-hidden">
-            <Sidebar user={user} />
+        <div className="flex h-screen bg-gray-950 overflow-hidden relative">
+            <Sidebar user={user} isOpen={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
 
-            <main className="flex-1 overflow-y-auto bg-gray-950 p-8">
+            <main className="flex-1 overflow-y-auto bg-gray-950 p-4 sm:p-8">
                 <header className="mb-8 flex items-center justify-between pb-5 border-b border-gray-900">
-                    <div>
-                        <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
-                            <Shield className="w-6 h-6 text-indigo-500" />
-                            <span>Admin Console</span>
-                        </h1>
-                        <p className="text-xs text-gray-400 mt-1">
-                            Manage policy memory and company member accounts for Tenant: <span className="font-mono text-indigo-400">{user?.tenant_id}</span>
-                        </p>
+                    <div className="flex items-center space-x-3">
+                        <button
+                            onClick={() => setMobileSidebarOpen(prev => !prev)}
+                            className="p-2 rounded-xl bg-gray-800 hover:bg-gray-750 text-gray-300 hover:text-white md:hidden transition-colors shrink-0"
+                            title="Toggle Sidebar"
+                        >
+                            <Menu className="w-5 h-5 text-orange-500" />
+                        </button>
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2">
+                                <Shield className="w-6 h-6 text-indigo-500" />
+                                <span>Admin Console</span>
+                            </h1>
+                            <p className="text-xs text-gray-400 mt-1">
+                                Manage policy memory and company member accounts for Tenant: <span className="font-mono text-indigo-400">{user?.tenant_id}</span>
+                            </p>
+                        </div>
                     </div>
                 </header>
 

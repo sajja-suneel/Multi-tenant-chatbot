@@ -15,6 +15,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>("default");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const router = useRouter();
 
   // 1. Initial Load: Fetch authenticated user, then load local storage cache + sync with MongoDB
@@ -211,12 +212,11 @@ export default function ChatPage() {
       </div>
     );
   }
-
   // Filter messages belonging to the current active chat session/thread
   const activeMessages = messages.filter(msg => ((msg as any).session_id || "default") === activeSessionId);
 
   return (
-    <div className="flex h-screen bg-gray-950 overflow-hidden">
+    <div className="flex h-screen bg-gray-950 overflow-hidden relative">
       <Sidebar 
         user={user} 
         onClearChat={handleClearChat} 
@@ -226,6 +226,8 @@ export default function ChatPage() {
         onDeleteSession={handleDeleteSession}
         onNewChat={handleNewChat}
         sessions={getSessions()}
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
       />
       <ChatWindow
         messages={activeMessages}
@@ -233,6 +235,7 @@ export default function ChatPage() {
         companyName={user?.company || "Company"}
         onClearChat={handleClearChat}
         activeSessionId={activeSessionId}
+        onToggleSidebar={() => setMobileSidebarOpen(prev => !prev)}
       />
     </div>
   );

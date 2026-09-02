@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Bot, AlertCircle, Trash2, Paperclip, CheckCircle2 } from "lucide-react";
+import { Send, Loader2, Bot, AlertCircle, Trash2, Paperclip, CheckCircle2, Menu } from "lucide-react";
 import { Message } from "../types";
 import MessageComponent from "./Message";
 import api from "../services/api";
@@ -12,6 +12,7 @@ interface ChatWindowProps {
     companyName: string;
     onClearChat?: () => void;
     activeSessionId?: string;
+    onToggleSidebar?: () => void;
 }
 
 export default function ChatWindow({ 
@@ -19,7 +20,8 @@ export default function ChatWindow({
     setMessages, 
     companyName, 
     onClearChat,
-    activeSessionId = "default"
+    activeSessionId = "default",
+    onToggleSidebar
 }: ChatWindowProps) {
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -107,8 +109,17 @@ export default function ChatWindow({
 
     return (
         <div className="flex-1 flex flex-col h-screen bg-gray-950 text-gray-100">
-            <header className="px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
+            <header className="px-4 sm:px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
+                    {onToggleSidebar && (
+                        <button
+                            onClick={onToggleSidebar}
+                            className="p-2 rounded-xl bg-gray-800 hover:bg-gray-750 text-gray-300 hover:text-white md:hidden transition-colors shrink-0"
+                            title="Toggle Sidebar"
+                        >
+                            <Menu className="w-5 h-5 text-orange-500" />
+                        </button>
+                    )}
                     <div className="w-8 h-8 rounded-lg bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
                         <Bot className="w-4 h-4" />
                     </div>
@@ -120,8 +131,6 @@ export default function ChatWindow({
                         </div>
                     </div>
                 </div>
-
-
             </header>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
