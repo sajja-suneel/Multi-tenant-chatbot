@@ -22,7 +22,7 @@ export default function MessageComponent({ message }: MessageProps) {
             )}
 
             {/* Message Bubble Wrapper */}
-            <div className="max-w-[85%] space-y-2">
+            <div className="max-w-[78%] sm:max-w-[85%] space-y-2">
                 <div
                     className={`p-4 rounded-2xl text-sm leading-relaxed break-words overflow-hidden ${isUser
                         ? "bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-600/10"

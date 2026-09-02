@@ -216,7 +216,7 @@ export default function ChatPage() {
   const activeMessages = messages.filter(msg => ((msg as any).session_id || "default") === activeSessionId);
 
   return (
-    <div className="flex h-screen bg-gray-950 overflow-hidden relative">
+    <div className="flex h-screen h-[100dvh] max-h-[100dvh] bg-gray-950 overflow-hidden relative">
       <Sidebar 
         user={user} 
         onClearChat={handleClearChat} 

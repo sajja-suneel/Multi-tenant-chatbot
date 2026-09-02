@@ -108,7 +108,7 @@ export default function ChatWindow({
     };
 
     return (
-        <div className="flex-1 flex flex-col h-screen bg-gray-950 text-gray-100">
+        <div className="flex-1 flex flex-col h-screen h-[100dvh] max-h-[100dvh] overflow-hidden bg-gray-950 text-gray-100">
             <header className="px-4 sm:px-6 py-4 bg-gray-900 border-b border-gray-800 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                     {onToggleSidebar && (
